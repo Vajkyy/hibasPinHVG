@@ -7,11 +7,15 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JOptionPane;
+import modell.PinModell;
 
 public class PinBekero extends javax.swing.JFrame {
 
+    private PinModell modell;
     private static int kattDb = 0;
     private static boolean mentve = false;
     private static String pin = "";
@@ -115,21 +119,21 @@ public class PinBekero extends javax.swing.JFrame {
     }// </editor-fold>//GEN-END:initComponents
 
     private void formWindowOpened(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowOpened
+        modell = new PinModell();
         for (int i = 0; i < jPanel1.getComponentCount(); i++) {
             JButton btn = (JButton) jPanel1.getComponent(i);
             btn.setText(i + "");
-            btn.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent e) {
-                    if (kattDb <= 4) {
-                        kattDb++;
-                        pin += e.getActionCommand();
+            btn.addActionListener(e -> {
+                modell.pinHozzaad(Integer.parseInt(e.getActionCommand()));
+
+                if (modell.pinKeszenVan()) {
+                    chbMutat.setEnabled(true);
+                    JOptionPane.showMessageDialog(rootPane, "Pin mentve!");
+                    try {
+                        modell.mentes();
+                    } catch (IOException ex) {
+                        Logger.getLogger(PinBekero.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    if (kattDb == 4) {
-                        chbMutat.setEnabled(true);
-                        JOptionPane.showMessageDialog(rootPane, "Pin mentve!");
-                    }
-                    mentes(pin);
                 }
             });
         }
@@ -138,24 +142,22 @@ public class PinBekero extends javax.swing.JFrame {
     private void mentes(String pin) {
         Path fajl = Path.of("pin.txt");
         try {
-            Files.writeString(fajl, pin, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+            Files.writeString(fajl, pin);
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(this, "Hiba a PIN mentése közben: " + ex.getMessage());
         }
     }
 
     private void chbMutatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_chbMutatActionPerformed
+        String pin = modell.getPin();
         if (chbMutat.isSelected()) {
             for (int i = 0; i < pin.length(); i++) {
-                int gomb = Integer.parseInt(pin.charAt(i) + "");
+                int gomb = Character.getNumericValue(pin.charAt(i));
                 jPanel1.getComponent(gomb).setBackground(Color.red);
             }
         } else {
-            chbMutat.setEnabled(false);
-            kattDb = 0;
-            for (int i = 0; i < pin.length(); i++) {
-                int gomb = Integer.parseInt(pin.charAt(i) + "");
-                jPanel1.getComponent(gomb).setBackground(Color.LIGHT_GRAY);
+            for (int i = 0; i < jPanel1.getComponentCount(); i++) {
+                jPanel1.getComponent(i).setBackground(Color.LIGHT_GRAY);
             }
         }
     }//GEN-LAST:event_chbMutatActionPerformed
